@@ -2,12 +2,17 @@
   "name": "projeto-integrador",
   "private": true,
   "packageManager": "npm@10.9.2",
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build"
   },
   "devDependencies": {
     "turbo": "latest"
+  },
+  "dependencies": {
+    "@rolldown/binding-win32-x64-msvc": "^1.0.1"
   }
 }
