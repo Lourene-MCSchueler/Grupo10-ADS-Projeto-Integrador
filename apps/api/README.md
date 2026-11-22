@@ -6,7 +6,7 @@ Backend REST em Node.js com Express, autenticação via sessão e banco SQLite.
 
 - **Express** — servidor HTTP
 - **express-session + connect-sqlite3** — sessões persistidas em banco
-- **better-sqlite3** — banco de dados SQLite
+- **better-sqlite3** (11.x) — banco de dados SQLite. A 11.x tem binário pronto para Node 22 no Windows; a 9.x exigia compilar com Visual Studio
 - **bcryptjs** — hash de senhas
 - **exceljs** — geração da planilha de exportação (.xlsx)
 
@@ -26,7 +26,8 @@ apps/api/
 │   │   ├── index.js       # Agrega todas as rotas
 │   │   ├── auth.js        # Rotas de autenticação
 │   │   ├── consultas.js   # Listagem e exportação de consultas
-│   │   └── ausencias.js   # Registro e resumo de ausências
+│   │   ├── ausencias.js   # Registro, listagem e resumo de ausências
+│   │   └── medicos.js     # Lista de médicos (filtro da agenda)
 │   ├── services/
 │   │   └── whatsapp.js    # Montagem e envio (simulado) do aviso ao paciente
 │   └── utils/
@@ -121,7 +122,7 @@ API disponível em `http://localhost:3001`.
 |--------|------|-----------|------|
 | `POST` | `/api/auth/login` | Login com email e senha | Não |
 | `POST` | `/api/auth/logout` | Encerra a sessão | Sim |
-| `GET` | `/api/auth/me` | Retorna o funcionário da sessão atual (inclui `role` e `medico_id`) | Sim |
+| `GET` | `/api/auth/me` | Retorna o funcionário da sessão atual (mesmo formato da resposta do login, com `role`, `medico_id` e `crm`) | Sim |
 
 **Body do login:**
 ```json
@@ -138,7 +139,17 @@ API disponível em `http://localhost:3001`.
 
 > `id` é o id do funcionário. `medico_id` e `crm` vêm `null` para recepção e gestor. O filtro `medicoId` das rotas usa o `medico_id`.
 
+### Médicos
+
+| Método | Rota | Descrição | Perfis |
+|--------|------|-----------|--------|
+| `GET` | `/api/medicos` | Lista os médicos (`id`, `nome`, `crm`) para o filtro da agenda | Todos (médico recebe só o próprio cadastro) |
+
 ```json
+[
+  { "id": 2, "nome": "Dr. Bruno Costa", "crm": "CRM-SP-67890" },
+  { "id": 1, "nome": "Dra. Ana Lima", "crm": "CRM-SP-12345" }
+]
 ```
 
 ### Consultas
@@ -214,6 +225,7 @@ Exige sessão ativa (login realizado).
 | Método | Rota | Descrição | Perfis |
 |--------|------|-----------|--------|
 | `POST` | `/api/ausencias` | Marca o médico como ausente em uma ou mais consultas e notifica os pacientes | Todos (médico só nas próprias consultas) |
+| `GET` | `/api/ausencias` | Lista as ausências do mês com o paciente avisado e o status do envio | `gestor` |
 | `GET` | `/api/ausencias/resumo` | Total de ausências do mês, agrupado por médico e por dia | `gestor` |
 
 #### `POST /api/ausencias`
@@ -243,6 +255,27 @@ Olá, João Silva. Sua consulta de 16/05/2026 às 09:00 com Dra. Ana Lima foi ca
 ```
 
 > A notificação de WhatsApp é simulada via `console.log` (`src/services/whatsapp.js`). Todas as consultas são atualizadas para `status = 'ausente'` em uma única transação. O resultado de cada envio é gravado em `ausencias.notificacao_status` (`enviada` ou `falha` — ex.: paciente sem telefone).
+
+#### `GET /api/ausencias?mes=AAAA-MM&medicoId=`
+
+Mesmos parâmetros e erros do resumo (abaixo). Usado na tela de relatório do gestor para acompanhar quem foi avisado e onde o envio falhou. Ordenado pela data da consulta.
+
+```json
+[
+  {
+    "id": 1,
+    "consulta_id": 1,
+    "registrada_em": "2026-11-22 18:51:02",
+    "notificacao_status": "enviada",
+    "notificado_em": "2026-11-22 18:51:02",
+    "data_hora": "2026-11-23T08:00",
+    "paciente_nome": "João Silva",
+    "paciente_telefone": "11991110001",
+    "medico_id": 1,
+    "medico_nome": "Dra. Ana Lima"
+  }
+]
+```
 
 #### `GET /api/ausencias/resumo?mes=AAAA-MM&medicoId=`
 
