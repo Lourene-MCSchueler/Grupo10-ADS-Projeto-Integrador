@@ -23,11 +23,13 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
-input {
+input,
+select {
   background: #ffffff;
   border: 1px solid #cbd6e6;
   border-radius: 8px;
@@ -38,7 +40,8 @@ input {
   width: 100%;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: #1a8f7b;
   box-shadow: 0 0 0 4px rgba(26, 143, 123, 0.12);
 }
