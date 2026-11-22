@@ -25,6 +25,7 @@ module.exports = (router) => {
     req.session.funcionarioNome = funcionario.nome;
     req.session.role = funcionario.role;
     req.session.medicoId = funcionario.medico_id; // null para recepção e gestor
+    req.session.crm = funcionario.crm;
 
     res.json({
       id: funcionario.id,
@@ -47,6 +48,7 @@ module.exports = (router) => {
       nome: req.session.funcionarioNome,
       role: req.session.role,
       medico_id: req.session.medicoId,
+      crm: req.session.crm ?? null,
     });
   });
 };

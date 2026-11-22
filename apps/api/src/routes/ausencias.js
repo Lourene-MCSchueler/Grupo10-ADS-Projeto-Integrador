@@ -74,6 +74,31 @@ module.exports = (router) => {
     });
   });
 
+  // Acompanhamento das notificações: cada ausência do mês com o paciente avisado e o status do envio.
+  router.get('/ausencias', autorizar('gestor'), (req, res) => {
+    const { erro, filtros } = validarFiltrosResumo(req.query);
+    if (erro) {
+      return res.status(400).json({ erro });
+    }
+
+    const ausencias = db.prepare(`
+      SELECT a.id, a.consulta_id, a.criado_em AS registrada_em,
+             a.notificacao_status, a.notificado_em,
+             c.data_hora,
+             p.nome AS paciente_nome, p.telefone AS paciente_telefone,
+             m.id AS medico_id, fm.nome AS medico_nome
+      FROM ausencias a
+      JOIN consultas c ON c.id = a.consulta_id
+      JOIN pacientes p ON p.id = c.paciente_id
+      JOIN medicos m ON m.id = c.medico_id
+      JOIN funcionarios fm ON fm.id = m.funcionario_id
+      WHERE substr(c.data_hora, 1, 7) = ? ${filtros.medicoId ? 'AND c.medico_id = ?' : ''}
+      ORDER BY c.data_hora, fm.nome
+    `).all(filtros.mes, ...(filtros.medicoId ? [filtros.medicoId] : []));
+
+    res.json(ausencias);
+  });
+
   router.get('/ausencias/resumo', autorizar('gestor'), (req, res) => {
     const { erro, filtros } = validarFiltrosResumo(req.query);
     if (erro) {
